@@ -1,30 +1,19 @@
-import socket
-import threading
+import asyncio
+import websockets
 
-clients = []
+clients = set()
 
-def handle_client(client):
-    while True:
-        try:
-            msg = client.recv(1024).decode()
-            broadcast(msg, client)
-        except:
-            clients.remove(client)
-            break
+async def handler(websocket, path):
+    clients.add(websocket)
+    try:
+        async for message in websocket:
+            for client in clients:
+                if client != websocket:
+                    await client.send(message)
+    finally:
+        clients.remove(websocket)
 
-def broadcast(message, sender):
-    for client in clients:
-        if client != sender:
-            client.send(message.encode())
+start_server = websockets.serve(handler, "0.0.0.0", 10000)
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind(("0.0.0.0", 10000))  # PORT FOR RENDER
-server.listen()
-
-print("Server running...")
-
-while True:
-    client, addr = server.accept()
-    clients.append(client)
-    print(f"{addr} connected")
-    threading.Thread(target=handle_client, args=(client,)).start()
+asyncio.get_event_loop().run_until_complete(start_server)
+asyncio.get_event_loop().run_forever()
