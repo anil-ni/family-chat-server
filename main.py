@@ -52,7 +52,7 @@ async def ws_handler(websocket):
         print("Client disconnected.")
 
 # --------------------------
-# HTTP HEALTH CHECK SERVER
+# HTTP HEALTH CHECK
 # --------------------------
 async def http_handler(request):
     return web.Response(text="Encrypted Chat Server is running")
@@ -64,7 +64,7 @@ async def main():
     port = int(os.environ.get("PORT", 10000))
     print(f"Server running on ws://0.0.0.0:{port} and HTTP /")
 
-    # HTTP server for health checks
+    # HTTP health check server
     app = web.Application()
     app.router.add_get("/", http_handler)
     runner = web.AppRunner(app)
@@ -73,11 +73,10 @@ async def main():
     await site.start()
 
     # WebSocket server (no path)
-    ws_server = websockets.serve(handler, "0.0.0.0", port, path="/ws")
+    ws_server = await websockets.serve(ws_handler, "0.0.0.0", port)
 
-    # Keep running
+    # Keep running forever
     await asyncio.Future()
 
 if __name__ == "__main__":
     asyncio.run(main())
-
