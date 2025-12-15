@@ -73,10 +73,11 @@ async def main():
     await site.start()
 
     # WebSocket server (no path)
-    ws_server = await websockets.serve(ws_handler, "0.0.0.0", port)
+    ws_server = websockets.serve(handler, "0.0.0.0", port, path="/ws")
 
     # Keep running
     await asyncio.Future()
 
 if __name__ == "__main__":
     asyncio.run(main())
+
