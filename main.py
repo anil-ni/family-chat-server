@@ -35,7 +35,7 @@ def decrypt_message(json_data: str) -> str:
 # --------------------------
 connected_clients = set()
 
-async def handler(websocket, path):
+async def ws_handler(websocket):
     connected_clients.add(websocket)
     print("Client connected:", websocket.remote_address)
     try:
@@ -62,9 +62,9 @@ async def http_handler(request):
 # --------------------------
 async def main():
     port = int(os.environ.get("PORT", 10000))
-    print(f"Server Running on ws://0.0.0.0:{port} and HTTP /")
+    print(f"Server running on ws://0.0.0.0:{port} and HTTP /")
 
-    # Start HTTP server for health checks
+    # HTTP server for health checks
     app = web.Application()
     app.router.add_get("/", http_handler)
     runner = web.AppRunner(app)
@@ -72,9 +72,8 @@ async def main():
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
 
-    # Start WebSocket server on same port, path /ws
-    ws_server = websockets.serve(handler, "0.0.0.0", port, path="/ws")
-    await ws_server
+    # WebSocket server (no path)
+    ws_server = await websockets.serve(ws_handler, "0.0.0.0", port)
 
     # Keep running
     await asyncio.Future()
