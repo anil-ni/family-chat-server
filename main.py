@@ -1,18 +1,14 @@
 import asyncio
 import websockets
 import json
-from Cryptodome.Cipher import AES
-from Crypto.Util.Padding import pad, unpad
-import base64
 import os
-
-port = int(os.environ.get("PORT", 10000))  # Use Render's port if available
-async with websockets.serve(handler, "0.0.0.0", port):
+from Cryptodome.Cipher import AES
+from Cryptodome.Util.Padding import pad, unpad
+import base64
 
 # --------------------------
 # ENCRYPTION CONFIG
 # --------------------------
-
 SECRET_KEY = b"this_is_32bytes_key_for_family_chat!!"  # 32 bytes key for AES-256
 
 def encrypt_message(message: str) -> str:
@@ -36,7 +32,6 @@ def decrypt_message(json_data: str) -> str:
 # --------------------------
 # WEBSOCKET SERVER
 # --------------------------
-
 connected_clients = set()
 
 async def handler(websocket, path):
@@ -46,15 +41,10 @@ async def handler(websocket, path):
     try:
         async for encrypted_msg in websocket:
             decrypted = decrypt_message(encrypted_msg)
-
-            # Re-encrypt before sending to others
             encrypted_broadcast = encrypt_message(decrypted)
-
-            # Broadcast to all users
             for client in connected_clients:
                 if client != websocket:
                     await client.send(encrypted_broadcast)
-
     except:
         pass
     finally:
@@ -62,11 +52,10 @@ async def handler(websocket, path):
         print("Client disconnected.")
 
 async def main():
-    print("Encrypted Chat Server Running on ws://0.0.0.0:10000")
-    async with websockets.serve(handler, "0.0.0.0", 10000):
+    port = int(os.environ.get("PORT", 10000))
+    print(f"Encrypted Chat Server Running on ws://0.0.0.0:{port}")
+    async with websockets.serve(handler, "0.0.0.0", port):
         await asyncio.Future()  # run forever
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
