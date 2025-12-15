@@ -1,2 +1,2 @@
-websockets
-pycryptodomex
+websockets==15.0.1
+pycryptodomex==3.20.1
