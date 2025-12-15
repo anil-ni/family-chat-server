@@ -6,7 +6,10 @@ from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad, unpad
 import base64
 
-SECRET_KEY = b"this_is_32bytes_key_for_family_chat!!"
+# --------------------------
+# ENCRYPTION CONFIG
+# --------------------------
+SECRET_KEY = b"this_is_32bytes_key_for_family_chat!!"  # 32 bytes key
 
 def encrypt_message(message: str) -> str:
     cipher = AES.new(SECRET_KEY, AES.MODE_CBC)
@@ -26,6 +29,9 @@ def decrypt_message(json_data: str) -> str:
     except:
         return "[DECRYPTION ERROR]"
 
+# --------------------------
+# WEBSOCKET SERVER
+# --------------------------
 connected_clients = set()
 
 async def handler(websocket, path):
@@ -45,7 +51,7 @@ async def handler(websocket, path):
         print("Client disconnected.")
 
 async def main():
-    port = int(os.environ.get("PORT", 10000))
+    port = int(os.environ.get("PORT", 10000))  # Render requires dynamic port
     print(f"Encrypted Chat Server Running on ws://0.0.0.0:{port}")
     async with websockets.serve(handler, "0.0.0.0", port):
         await asyncio.Future()  # run forever
