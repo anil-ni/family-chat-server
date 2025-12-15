@@ -4,6 +4,10 @@ import json
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import base64
+import os
+
+port = int(os.environ.get("PORT", 10000))  # Use Render's port if available
+async with websockets.serve(handler, "0.0.0.0", port):
 
 # --------------------------
 # ENCRYPTION CONFIG
@@ -64,3 +68,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
