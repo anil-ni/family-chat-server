@@ -1,16 +1,15 @@
-import asyncio
-import websockets
-import json
 import os
+import json
+import base64
+import asyncio
+from aiohttp import web, WSMsgType
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad, unpad
-import base64
-from aiohttp import web
 
 # --------------------------
 # ENCRYPTION CONFIG
 # --------------------------
-SECRET_KEY = b"this_is_32bytes_key_for_family_chat!!"  # 32 bytes key
+SECRET_KEY = b"this_is_32bytes_key_for_family_chat!!"  # 32 bytes
 
 def encrypt_message(message: str) -> str:
     cipher = AES.new(SECRET_KEY, AES.MODE_CBC)
@@ -31,52 +30,46 @@ def decrypt_message(json_data: str) -> str:
         return "[DECRYPTION ERROR]"
 
 # --------------------------
-# WEBSOCKET SERVER
+# WEBSOCKET HANDLER
 # --------------------------
 connected_clients = set()
 
-async def ws_handler(websocket):
-    connected_clients.add(websocket)
-    print("Client connected:", websocket.remote_address)
+async def websocket_handler(request):
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
+    connected_clients.add(ws)
+    print("Client connected")
+
     try:
-        async for encrypted_msg in websocket:
-            decrypted = decrypt_message(encrypted_msg)
-            encrypted_broadcast = encrypt_message(decrypted)
-            for client in connected_clients:
-                if client != websocket:
-                    await client.send(encrypted_broadcast)
-    except:
-        pass
+        async for msg in ws:
+            if msg.type == WSMsgType.TEXT:
+                decrypted = decrypt_message(msg.data)
+                encrypted_broadcast = encrypt_message(decrypted)
+                # Broadcast to all other clients
+                for client in connected_clients:
+                    if client != ws:
+                        await client.send_str(encrypted_broadcast)
+            elif msg.type == WSMsgType.ERROR:
+                print(f'WebSocket connection closed with exception {ws.exception()}')
     finally:
-        connected_clients.remove(websocket)
-        print("Client disconnected.")
+        connected_clients.remove(ws)
+        print("Client disconnected")
+    return ws
 
 # --------------------------
 # HTTP HEALTH CHECK
 # --------------------------
-async def http_handler(request):
+async def health_check(request):
     return web.Response(text="Encrypted Chat Server is running")
 
 # --------------------------
-# MAIN FUNCTION
+# MAIN APP
 # --------------------------
-async def main():
-    port = int(os.environ.get("PORT", 10000))
-    print(f"Server running on ws://0.0.0.0:{port} and HTTP /")
-
-    # HTTP health check server
-    app = web.Application()
-    app.router.add_get("/", http_handler)
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", port)
-    await site.start()
-
-    # WebSocket server (no path)
-    ws_server = await websockets.serve(ws_handler, "0.0.0.0", port)
-
-    # Keep running forever
-    await asyncio.Future()
+app = web.Application()
+app.router.add_get("/", health_check)       # Health check
+app.router.add_get("/ws", websocket_handler)  # WebSocket path
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    port = int(os.environ.get("PORT", 10000))
+    print(f"Server running on http://0.0.0.0:{port} and WebSocket /ws")
+    web.run_app(app, host="0.0.0.0", port=port)
