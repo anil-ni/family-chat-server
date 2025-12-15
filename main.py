@@ -9,7 +9,8 @@ from Cryptodome.Util.Padding import pad, unpad
 # --------------------------
 # ENCRYPTION CONFIG
 # --------------------------
-SECRET_KEY = b"this_is_32bytes_key_for_family_chat!!"  # 32 bytes
+SECRET_KEY = b"this_is_32bytes_key_for_family_chat"  # exactly 32 bytes
+  # 32 bytes
 
 def encrypt_message(message: str) -> str:
     cipher = AES.new(SECRET_KEY, AES.MODE_CBC)
@@ -73,3 +74,4 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     print(f"Server running on http://0.0.0.0:{port} and WebSocket /ws")
     web.run_app(app, host="0.0.0.0", port=port)
+
