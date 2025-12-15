@@ -5,6 +5,7 @@ import os
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad, unpad
 import base64
+from aiohttp import web
 
 # --------------------------
 # ENCRYPTION CONFIG
@@ -50,11 +51,33 @@ async def handler(websocket, path):
         connected_clients.remove(websocket)
         print("Client disconnected.")
 
+# --------------------------
+# HTTP HEALTH CHECK SERVER
+# --------------------------
+async def http_handler(request):
+    return web.Response(text="Encrypted Chat Server is running")
+
+# --------------------------
+# MAIN FUNCTION
+# --------------------------
 async def main():
-    port = int(os.environ.get("PORT", 10000))  # Render requires dynamic port
-    print(f"Encrypted Chat Server Running on ws://0.0.0.0:{port}")
-    async with websockets.serve(handler, "0.0.0.0", port):
-        await asyncio.Future()  # run forever
+    port = int(os.environ.get("PORT", 10000))
+    print(f"Server Running on ws://0.0.0.0:{port} and HTTP /")
+
+    # Start HTTP server for health checks
+    app = web.Application()
+    app.router.add_get("/", http_handler)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+
+    # Start WebSocket server on same port, path /ws
+    ws_server = websockets.serve(handler, "0.0.0.0", port, path="/ws")
+    await ws_server
+
+    # Keep running
+    await asyncio.Future()
 
 if __name__ == "__main__":
     asyncio.run(main())
