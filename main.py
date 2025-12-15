@@ -1,7 +1,7 @@
 import asyncio
 import websockets
 import json
-from Crypto.Cipher import AES
+from Cryptodome.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import base64
 import os
@@ -68,4 +68,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
